@@ -10,12 +10,15 @@ logging.getLogger('flask_ask').setLevel(logging.DEBUG)
 PIN_HDMI_SWITCHER_INPUT = 22
 PIN_HDMI_SPLIITER_OUTOUT = 27
 PIN_USB_SWITCHER = 17
+PIN_AUDIO_SWITCHER = 18
 
 # GPIO setup
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(PIN_HDMI_SWITCHER_INPUT, GPIO.OUT)
 GPIO.setup(PIN_HDMI_SPLIITER_OUTOUT, GPIO.OUT)
 GPIO.setup(PIN_USB_SWITCHER, GPIO.OUT)
+GPIO.setup(PIN_AUDIO_SWITCHER, GPIO.OUT)
+
 
 def response_alexa(speech, end_session=True):
     return {
@@ -52,6 +55,29 @@ def handle_hdmi_output_intent():
     time.sleep(1)
     GPIO.output(PIN_HDMI_SPLIITER_OUTOUT, GPIO.LOW)
     return jsonify(response_alexa('Cambiando Pantallas'))
+
+def change_peripherals_intent():
+    # Cambia HDMI
+    handle_hdmi_switch_input()
+    # Cambia USB
+    handle_usb_intent()
+    return jsonify(response_alexa('Cambiando HDMI y USB'))
+
+def handle_hdmi_multiple_intent():
+    # Cambia HDMI dos veces
+    handle_hdmi_switch_input()
+    time.sleep(1)
+    handle_hdmi_switch_input()
+    return jsonify(response_alexa('Cambiando HDMI dos veces'))
+
+def audio_switch_intent():
+    GPIO.output(PIN_AUDIO_SWITCHER, GPIO.LOW)
+    time.sleep(1)
+    GPIO.output(PIN_AUDIO_SWITCHER, GPIO.HIGH)
+    time.sleep(1)
+    GPIO.output(PIN_AUDIO_SWITCHER, GPIO.LOW)
+    return jsonify(response_alexa('Cambiando Audio'))
+
 @app.route('/', methods=['POST'])
 def gpio_control():
     data = request.json
@@ -66,6 +92,15 @@ def gpio_control():
         
         elif intent_name == 'HDMIOUTPUTINTENT':
             return handle_hdmi_output_intent()
+        
+        elif intent_name == 'CHANGEPERIFERICSINTENT':
+            return change_peripherals_intent()
+        
+        elif intent_name == 'HANDLEHDMIMULTIPLEINTENT':
+            return handle_hdmi_multiple_intent()
+        
+        elif intent_name == 'AUDIOSWITCHINTENT':
+            return audio_switch_intent()
 
 if __name__ == '__main__':
     try:
